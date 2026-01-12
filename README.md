@@ -9,11 +9,11 @@
 - `LICENSE`: Contains the license information.
 - `README.md`: This file, containing information about the project.
 
-## Project Report Format
 
-### Project Title
 
-Steel Production Data
+### Steel Production Data
+
+
 ### Abstract
 
 The goal of this project is to predict the quality of steel production based on process sensor data. Accurate prediction of steel output can help reduce waste, improve process control, and ensure consistent product quality in industrial environments.
@@ -63,12 +63,17 @@ The data analysis pipeline consisted of multiple stages:
 **1. Exploratory Data Analysis (EDA)**
 
 - Missing value analysis: identified and quantified null values across all columns, visualized null fraction distributions
+
 ![alt text](results/tables/MissingValues_Columns.png)
+
 - Duplicate detection: identified and analyzed duplicate rows to assess data quality
+
 ![Duplicates in Rows](results/tables/n_Duplicates.png)
+
 Summary: No Duplicates have been found before replacing NaN's with the arithmetic mean of columns
 
 - Distribution analysis: created histogram of output and pairplots (using seaborn and matplotlib) to visualize feature and target distributions
+
 ![alt text](results/figures/output_hist_totalnumbers.png)
 ![alt text](results/figures/outputvsinput1to21_histogramm.png)
 
@@ -76,13 +81,16 @@ Summary: No Duplicates have been found before replacing NaN's with the arithmeti
 ![alt text](results/figures/heatmap_correlations.png)
 
 
-PCA Results:
+- PCA Results:
 ![alt text](results/figures/PCA_analysis_2D.png)
+
+
 It is significant that using principal component analysis (features broken down to 2 components), that the first two components only explain approx. 28% of the variance. Usually in simple datasets the (In udemy.com ML/DL online courses) the first two components  often capture 50-80% of the variance. 
 This menas that the 21 features are relativelyx independent or have complex, non-linear relationships. There is no subset of 2-3 features that "dominate" and tell the whole story so to speak.
 This already suggests that - since PCA is a linear transformation - that linear models and shallow NN's will inherently struggle to find the connection. The data is high-dimensional in nature, therefore the model needs to look at many features simultaneuosly to accurately predict. With only 28% variance in the first two components, a significant portion of the remaining 72% could either be high-frequency signal or random noise.
 
 This begs the question of how many features are actually needed to explain a high portion of the variance.
+
 ![alt text](<results/figures/PCA_analysis_cumulated sum.png>)
 
 The cumulated variance plot reveals a critical truth about the dataset: Information is highly distributed
@@ -109,24 +117,24 @@ If the data was linear (and redundant) 3-4 components would already capture 90% 
 **3. Tools used**
 
 Libraries used:
-Python + NumPy/Pandas: Data loading, manipulation, and numerical arrays.
-Used for basically everything, makes data manipulations and handling of arrays easier
+- Python + NumPy/Pandas: Data loading, manipulation, and numerical arrays. 
+    Used for basically everything, makes data manipulations and handling of arrays easier
 
-Matplotlib + Seaborn: Exploratory plotting (histograms, pairplots, heatmaps, scatter).
-Matplotlib was widely used for most visulizations and data exploration.
-Seaborn was exclusively used for the ability to generate a pairplot without hassle
+- Matplotlib + Seaborn: Exploratory plotting (histograms, pairplots, heatmaps, scatter).
+    Matplotlib was widely used for most visulizations and data exploration.
+    Seaborn was exclusively used for the ability to generate a pairplot without hassle
 
-scikit-learn: Train/test split, PCA, Linear Regression, RandomForestRegressor, GaussianProcessRegressor (with RBF, Matern, Constant/White kernels).
-Used for all machine learning models and for the principal component analysis to explain the captured variance 
+- scikit-learn: Train/test split, PCA, Linear Regression, RandomForestRegressor, GaussianProcessRegressor (with RBF, Matern, Constant/    White kernels).
+    Used for all machine learning models and for the principal component analysis to explain the captured variance 
 
-TensorFlow/Keras: Sequential dense neural nets for baseline and optimized models (Dense layers, BatchNormalization, Dropout), with Huber/MSE losses, Adam optimizer.
-Used for the shallow neural network nnstd (neural network standard) and the "optimized" deep neural network nnopt (neural network optimized) 
+- TensorFlow/Keras: Sequential dense neural nets for baseline and optimized models (Dense layers, BatchNormalization, Dropout), with Huber/MSE losses, Adam optimizer.
+    Used for the shallow neural network nnstd (neural network standard) and the "optimized" deep neural network nnopt (neural network optimized) 
 
-Keras callbacks: ReduceLROnPlateau and EarlyStopping for training control.
-Exclusively used for the deep neural network nnopt to reduce learning rate on plateu and early stopping to restore best weights throughout the epochs 
+- Keras callbacks: ReduceLROnPlateau and EarlyStopping for training control.
+    xclusively used for the deep neural network nnopt to reduce learning rate on plateu and early stopping to restore best weights throughout the epochs 
 
-Custom helper (plot_helper): Evaluation metrics table, prediction scatter, and loss plotting.
-Used to visualize the model evaluations. Contains 3 defs to make the notebook file sleeker
+- Custom helper (plot_helper): Evaluation metrics table, prediction scatter, and loss plotting.
+    Used to visualize the model evaluations. Contains 3 defs to make the notebook file sleeker
 
 *Baseline Regression Model:*
 - Linear Regression: established baseline performance using ordinary least squares
@@ -134,9 +142,9 @@ Used to visualize the model evaluations. Contains 3 defs to make the notebook fi
 *Regression Models:*
 - Random Forest Regressor: Evaluated based on R2-score using default hyperparameters
 
--Gaussian Process: Terminated after 120mins due to it running on CPU
+- Gaussian Process: Terminated after 120mins due to it running on CPU
 
--Mixed Gaussian Process (GPyTorch): combines Matern/Linear/Scale kernels.
+- Mixed Gaussian Process (GPyTorch): combines Matern/Linear/Scale kernels.
     Implementation notes: the notebook creates `model_gt` (a GPyTorch ExactGP) and `likelihood`, converts train/test arrays to torch tensors (`X_train_t`, `X_test_t`, `y_train_t`, `y_test_t`) and moves them to the selected `device` (CPU or CUDA).
     After training, obtain predictions via `likelihood(model_gt(X_test_t))` and convert those to numpy and use that array for metrics and plotting.
     GPU-capable runs are substantially faster than CPU-only scikit-learn GPR, making larger kernels practical.
@@ -164,25 +172,23 @@ In the first few iterations it was worngly assumed that the given data is of cat
 
 After talks with Mr. Feith at CPS it was concluded that these data_entries were indeed of continous nature but due to scaling and/or accuarcy of the raw data appear discrete.
 
-Linear Regression: 
+- Linear Regression: 
 **Findings**
-
 The baseline linear regression fits on the normalized 21 inputs without strong feature compression. Given PCA showed variance is spread across many components, a linear model most likely captures only a portion of the signal. The linear regression is used as a sanity-check baseline only.
 
 **Visualizations**
 ![alt text](<results/figures/ground_truth vs predicted_lr.png>)
 ![alt text](results/figures/Model_Evaluation_lr.png)
 
-Limitations:
+**Limitations**
 Linear assumes additive, globally linear relationships and no complex interactions; with variance distributed across many components, multiple columns can dilute coefficients and reduce R2 stability.The model therefore underfits any nonlinear effects.
 
-**Conclusion:**
+**Conclusion**
 Linear regression serves as a baseline sanity check but inherently underfits the distributed information revealed by PCA. The model fails to capture nonlinear interactions and the complexity hidden across 14+ principal components. To strengthen the baseline, regularization (Ridge/Lasso) could be added. Richer architectures (RF, GP, optimized DNN) are better positioned to exploit the high-dimensional signal in the steel production data.
 
 
-Random Forest Regressor:
+- Random Forest Regressor:
 **Findings**
-
 The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and shows improved R² and lower RMSE compared to linear regression.
 
 **Visualizations**
@@ -195,7 +201,7 @@ Default hyperparameters may not be optimal. Without tuning (max_depth, n_estimat
 **Conclusion:**
 Random Forest outperforms linear regression on this dataset due to its ability to model nonlinear interactions and capture complex patterns across 21 features. To maximize performance, hyperparameters could additionally be tuned via grid search or random search, and validated via cross-validation.
 
-Mixed Gaussian Proces (Gpytorch GPU):
+- Mixed Gaussian Proces (Gpytorch GPU):
 **Findings**
 
 Using a composite kernel the model was able to simultaneously capture smooth non-linear wiggles (Matern) and overall global trends (Linear). It produced the best R²-scores of all models deployed. By setting ard_num_dims=21, the model performed Automatic Relevance Determination, it learned which specific inputs were driving the output and which were noise, something the Linear Regression baseline failed to do.
@@ -213,9 +219,8 @@ Practical limitations remain: exact GP training is expensive for larger datasets
 Switching to GPyTorch was the turning point for this project. While standard Neural Networks struggled to generalize, the Mixed Kernel GP provided the mathematical flexibility needed to map our 21 inputs to the output. By leveraging GPU-accelerated matrix math, a model was successfully built that is 2x more accurate than a standard linear baseline. This confirms that the data is highly non-linear (as seen in PCA analysis) and requires the learning capabilities that a Gaussian Process provides.
 
 
-DNN standard:
+- DNN standard:
 **Findings**
-
 The standard shallow DNN (256 hidden neurons → 1 output) trains quickly on the normalized 21 inputs with ReLU activation and MSE loss. This lightweight architecture provides a baseline for neural network performance without heavy regularization. Training converges within 100 epochs, demonstrating that basic dense layers can learn patterns in the distributed high-dimensional data better than linear regression. The R2 score of 0.39 certainly beats the baseline model but is still below the target score of 0.5.
 
 **Visualizations**
@@ -230,7 +235,7 @@ Shallow architecture with only one hidden layer may underfit complex nonlinear r
 The standard DNN serves as a proof-of-concept that neural networks outperform linear models on this dataset, but the shallow architecture and lack of regularization limits its effectiveness. The learning curve (loss vs epoch) suggests that the model learned everything it could about the data way before the 100th epoch. 
 
 
-DNN optimized:
+- DNN optimized:
 **Findings**
 The optimized Deep Neural Network (DNN) utilized a significantly deeper architecture (512 → 256 → 128 → 64 → 64 → 1) and robust training techniques. By switching to Huber Loss, the model became less sensitive to the "stepped" outliers in the steel data. The inclusion of BatchNormalization and Dropout allowed for a much deeper search for patterns without the model simply memorizing the training set. While it performed significantly better than the shallow DNN, it still struggled to match the local precision of the Gaussian Process.
 
