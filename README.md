@@ -130,12 +130,17 @@ Used to visualize the model evaluations. Contains 3 defs to make the notebook fi
 
 *Baseline Regression Model:*
 - Linear Regression: established baseline performance using ordinary least squares
+
 *Regression Models:*
 - Random Forest Regressor: Evaluated based on R2-score using default hyperparameters
 
-ADD THOSE TWO:
- -Gaussian Process: 
- -Mixed Gaussian Process
+-Gaussian Process: Terminated after 120mins due to it running on CPU
+
+-Mixed Gaussian Process (GPyTorch): combines Matern/Linear/Scale kernels.
+    Implementation notes: the notebook creates `model_gt` (a GPyTorch ExactGP) and `likelihood`, converts train/test arrays to torch tensors (`X_train_t`, `X_test_t`, `y_train_t`, `y_test_t`) and moves them to the selected `device` (CPU or CUDA).
+    After training, obtain predictions via `likelihood(model_gt(X_test_t))` and convert those to numpy and use that array for metrics and plotting.
+    GPU-capable runs are substantially faster than CPU-only scikit-learn GPR, making larger kernels practical.
+
 
 *Deep Learning Models:*
 - Multi-layer perceptron (MLP) architectures with varying depths (256→1 (shallow) and 512→256→128→64→64→1)
@@ -178,7 +183,7 @@ Linear regression serves as a baseline sanity check but inherently underfits the
 Random Forest Regressor:
 **Findings**
 
-The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and should show improved R² and lower RMSE compared to linear regression.
+The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and shows improved R² and lower RMSE compared to linear regression.
 
 **Visualizations**
 ![alt text](<results/figures/ground_truth vs predicted_rfreg.png>)
@@ -189,6 +194,24 @@ Default hyperparameters may not be optimal. Without tuning (max_depth, n_estimat
 
 **Conclusion:**
 Random Forest outperforms linear regression on this dataset due to its ability to model nonlinear interactions and capture complex patterns across 21 features. To maximize performance, hyperparameters could additionally be tuned via grid search or random search, and validated via cross-validation.
+
+Mixed Gaussian Proces (Gpytorch GPU):
+**Findings**
+
+Using a composite kernel the model was able to simultaneously capture smooth non-linear wiggles (Matern) and overall global trends (Linear). It produced the best R²-scores of all models deployed. By setting ard_num_dims=21, the model performed Automatic Relevance Determination, it learned which specific inputs were driving the output and which were noise, something the Linear Regression baseline failed to do.
+
+**Visualizations**
+![alt text](<results/figures/ground_truth vs predicted_gt.png>)
+![alt text](results/figures/Model_Evaluation_gt.png)
+
+**Limitations:**
+Using the normal scikitlearn Gaussian Process (running on CPU) runtime exceeded 120mins and was therefore terminated. Utilising gpytorch finally made it possible to evaluate a mixed gaussian process but even with a good graphics card like the RTX 3070, this model uses a lot of video memory. If the dataset was much bigger, the computer might run out of VRAM and crash.
+
+Practical limitations remain: exact GP training is expensive for larger datasets and hyperparameter sensitivity requires careful initialization; sparse or approx. GP approaches are recommended when scaling is needed.
+
+**Conclusion:**
+Switching to GPyTorch was the turning point for this project. While standard Neural Networks struggled to generalize, the Mixed Kernel GP provided the mathematical flexibility needed to map our 21 inputs to the output. By leveraging GPU-accelerated matrix math, a model was successfully built that is 2x more accurate than a standard linear baseline. This confirms that the data is highly non-linear (as seen in PCA analysis) and requires the learning capabilities that a Gaussian Process provides.
+
 
 DNN standard:
 **Findings**
@@ -209,16 +232,18 @@ The standard DNN serves as a proof-of-concept that neural networks outperform li
 
 DNN optimized:
 **Findings**
-
-[Briefly summarize the key findings of your analysis.]
+The optimized Deep Neural Network (DNN) utilized a significantly deeper architecture (512 → 256 → 128 → 64 → 64 → 1) and robust training techniques. By switching to Huber Loss, the model became less sensitive to the "stepped" outliers in the steel data. The inclusion of BatchNormalization and Dropout allowed for a much deeper search for patterns without the model simply memorizing the training set. While it performed significantly better than the shallow DNN, it still struggled to match the local precision of the Gaussian Process.
 
 **Visualizations**
 ![alt text](<results/figures/ground_truth vs predicted_dnnopt.png>)
 ![alt text](<results/figures/loss vs epoch_dnnopt.png>)
 ![alt text](results/figures/Model_Evaluation_dnnopt.png)
-**Limitations**
-**Conclusion**
 
+**Limitations**
+Deep models are data-hungry; despite 7,600+ rows, the high dimensionality (21 features) and the distributed variance (as seen in PCA) mean that even an optimized MLP can struggle to find the global optimum. The "discrete" nature of the output (quality strips) remains a challenge for the smooth activation functions (ReLU) used in this architecture.
+
+**Conclusion**
+The optimized DNN proved that "going deeper" helps, but only when paired with modern regularization like EarlyStopping. It achieved a "respectable" R2 (≈0.43), proving that the steel production data requires complex, hierarchical feature extraction to beat a linear baseline.
 
 
 
@@ -227,7 +252,22 @@ DNN optimized:
 
 
 ## Conclusion
+The primary objective of this project was to develop a predictive model for steel production quality capable of achieving an R2 score of at least 0.5. Through a systematic pipeline of exploratory data analysis, dimensionality assessment, and multi-model experimentation, this objective was successfully met.
 
+Key Takeaways:
+
+    The Nature of the Data: PCA revealed that the dataset is highly complex and non-redundant, with 14+ components required to explain 90% of the variance. This explains why the Linear Regression baseline performed so poorly; there is no simple "shortcut" or dominant feature in steel quality prediction.
+
+    Model Hierarchy: We observed a clear progression in performance as model complexity increased. Moving from Linear models to Random Forests and Optimized DNNs allowed me to capture the non-linear signals. However, the Mixed Gaussian Process (GPyTorch) emerged as the best solution.
+
+    The Power of Custom Kernels: The success of the GP model (reaching the 0.50 R2 target) was driven by the combination of a Matern kernel for local non-linearities and a Linear kernel for global trends. This suggests that steel production variables interact in a way that is best modeled by "local" similarity rather than just global weights.
+
+    Hardware as an Enabler: The transition from CPU-based Scikit-Learn to GPU-accelerated GPyTorch was a technical turning point. It transformed a model that was previously "untrainable" (due to 120min+ runtimes) into a fast, iterative tool that provided the most accurate results of the entire study.
+
+Final Verdict: 
+While the Mixed Gaussian Process is the best-performing model in this study, an R2 of 0.52 is still considered a weak predictive score for industrial deployment. This means the model only explains ≈50% of the variation in steel quality, leaving the other 50% to "mystery" factors or noise.
+
+There is significant room for improvement. The "discrete" strips in the output data suggest that the current sensor features may be missing key information, or that the Min-Max scaling process has introduced artifacts that hinder regression. Future work should focus on more advanced feature engineering or "Deep Kernel Learning" rather than just adding more layers to a Neural Network.
 
 
 ## License
@@ -235,6 +275,14 @@ DNN optimized:
 For those that choose their own project, provide license details of your dataset e.g., this data is licensed under the [The License] - see the [LICENSE.md](LICENSE) file for details.
 
 ## Acknowledgments
-- Mention any individuals or organizations that helped you in executing the project.
-- Reference any research papers, data, or other resources that were crucial for the completion of your project. Do not forget to provide ChatGPT prompts you used for the project.
 
+Mr Jannis Seemann(Udemy.com): For the following udemy courses that were needed to understand the "backend" of the various models deployed.
+Maschinelles Lernen komplett: Regression, Klassifizierung, Clustering, NLP, AI, KI, Deep Learning & Neuronale Netze
+Deep Learning verstehen: Entwickle Neuronale Netze in Python
+
+Mr. Feith (CPS): For critical insights regarding the discrete vs. continuous nature of the production output data and the decision what kernels to deploy for my gaussian process.
+
+Gemini/GPyTorch Documentation: For assistance in migrating exact GP calculations to CUDA-enabled tensors.
+
+Prompts Used in ChatGPT: "How to implement ARD in GPyTorch," "Moving scikit-learn kernels to GPyTorch," "Optimizing MLP for robust regression with Huber Loss," "How to use ReduceLROnPlateau to prevent the loss from stalling in Keras," 
+"Setting up EarlyStopping to avoid overfitting after the 50th epoch," "Explain the difference between Huber loss and MSE when the output data looks discrete or has vertical strips."
