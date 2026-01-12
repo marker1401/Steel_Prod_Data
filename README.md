@@ -82,6 +82,7 @@ Summary: No Duplicates have been found before replacing NaN's with the arithmeti
 
 
 - PCA Results:
+
 ![alt text](results/figures/PCA_analysis_2D.png)
 
 
