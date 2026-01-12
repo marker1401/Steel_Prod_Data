@@ -147,6 +147,7 @@ Libraries used:
 - Gaussian Process: Terminated after 120mins due to it running on CPU
 
 - Mixed Gaussian Process (GPyTorch): combines Matern/Linear/Scale kernels.
+
     Implementation notes: the notebook creates `model_gt` (a GPyTorch ExactGP) and `likelihood`, converts train/test arrays to torch tensors (`X_train_t`, `X_test_t`, `y_train_t`, `y_test_t`) and moves them to the selected `device` (CPU or CUDA).
     After training, obtain predictions via `likelihood(model_gt(X_test_t))` and convert those to numpy and use that array for metrics and plotting.
     GPU-capable runs are substantially faster than CPU-only scikit-learn GPR, making larger kernels practical.
@@ -180,86 +181,96 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
 
 - Linear Regression:
 
-**Findings**
+    **Findings**
+
 The baseline linear regression fits on the normalized 21 inputs without strong feature compression. Given PCA showed variance is spread across many components, a linear model most likely captures only a portion of the signal. The linear regression is used as a sanity-check baseline only.
 
-**Visualizations**
+    **Visualizations**
+
 ![alt text](<results/figures/ground_truth vs predicted_lr.png>)
 ![alt text](results/figures/Model_Evaluation_lr.png)
 
-**Limitations**
+    **Limitations**
 Linear assumes additive, globally linear relationships and no complex interactions; with variance distributed across many components, multiple columns can dilute coefficients and reduce R2 stability.The model therefore underfits any nonlinear effects.
 
-**Conclusion**
+    **Conclusion**
+
 Linear regression serves as a baseline sanity check but inherently underfits the distributed information revealed by PCA. The model fails to capture nonlinear interactions and the complexity hidden across 14+ principal components. To strengthen the baseline, regularization (Ridge/Lasso) could be added. Richer architectures (RF, GP, optimized DNN) are better positioned to exploit the high-dimensional signal in the steel production data.
 
 
 - Random Forest Regressor:
 
-**Findings**
+    **Findings**
+
 The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and shows improved R² and lower RMSE compared to linear regression.
 
-**Visualizations**
+    **Visualizations**
+
 ![alt text](<results/figures/ground_truth vs predicted_rfreg.png>)
 ![alt text](results/figures/Model_Evaluation_rfreg.png)
 
-**Limitations:**
+    **Limitations:**
+
 Default hyperparameters may not be optimal. Without tuning (max_depth, n_estimators, min_samples_leaf) the model risks overfitting on training data as shown in ground_truth vs predicted. 
 
-**Conclusion:**
+    **Conclusion:**
+
 Random Forest outperforms linear regression on this dataset due to its ability to model nonlinear interactions and capture complex patterns across 21 features. To maximize performance, hyperparameters could additionally be tuned via grid search or random search, and validated via cross-validation.
 
 - Mixed Gaussian Proces (Gpytorch GPU):
 
-**Findings**
+    **Findings**
 
-Using a composite kernel the model was able to simultaneously capture smooth non-linear wiggles (Matern) and overall global trends (Linear). It produced the best R²-scores of all models deployed. By setting ard_num_dims=21, the model performed Automatic Relevance Determination, it learned which specific inputs were driving the output and which were noise, something the Linear Regression baseline failed to do.
+    Using a composite kernel the model was able to simultaneously capture smooth non-linear wiggles (Matern) and overall global trends (Linear). It produced the best R²-scores of all models deployed. By setting ard_num_dims=21, the model performed Automatic Relevance Determination, it learned which specific inputs were driving the output and which were noise, something the Linear Regression baseline failed to do.
+  
+    
+    **Visualizations**
 
-**Visualizations**
-![alt text](<results/figures/ground_truth vs predicted_gt.png>)
-![alt text](results/figures/Model_Evaluation_gt.png)
+    ![alt text](<results/figures/ground_truth vs predicted_gt.png>)
+    ![alt text](results/figures/Model_Evaluation_gt.png)
 
-**Limitations:**
-Using the normal scikitlearn Gaussian Process (running on CPU) runtime exceeded 120mins and was therefore terminated. Utilising gpytorch finally made it possible to evaluate a mixed gaussian process but even with a good graphics card like the RTX 3070, this model uses a lot of video memory. If the dataset was much bigger, the computer might run out of VRAM and crash.
 
-Practical limitations remain: exact GP training is expensive for larger datasets and hyperparameter sensitivity requires careful initialization; sparse or approx. GP approaches are recommended when scaling is needed.
+    **Limitations:**
+    Using the normal scikitlearn Gaussian Process (running on CPU) runtime exceeded 120mins and was therefore terminated. Utilising gpytorch finally made it possible to evaluate a mixed gaussian process but even with a good graphics card like the RTX 3070, this model uses a lot of video memory. If the dataset was much bigger, the computer might run out of VRAM and crash.
 
-**Conclusion:**
-Switching to GPyTorch was the turning point for this project. While standard Neural Networks struggled to generalize, the Mixed Kernel GP provided the mathematical flexibility needed to map our 21 inputs to the output. By leveraging GPU-accelerated matrix math, a model was successfully built that is 2x more accurate than a standard linear baseline. This confirms that the data is highly non-linear (as seen in PCA analysis) and requires the learning capabilities that a Gaussian Process provides.
+    Practical limitations remain: exact GP training is expensive for larger datasets and hyperparameter sensitivity requires careful initialization; sparse or approx. GP approaches are recommended when scaling is needed.
+
+    **Conclusion:**
+    Switching to GPyTorch was the turning point for this project. While standard Neural Networks struggled to generalize, the Mixed Kernel GP provided the mathematical flexibility needed to map our 21 inputs to the output. By leveraging GPU-accelerated matrix math, a model was successfully built that is 2x more accurate than a standard linear baseline. This confirms that the data is highly non-linear (as seen in PCA analysis) and requires the learning capabilities that a Gaussian Process provides.
 
 
 - DNN standard:
 
-**Findings**
-The standard shallow DNN (256 hidden neurons → 1 output) trains quickly on the normalized 21 inputs with ReLU activation and MSE loss. This lightweight architecture provides a baseline for neural network performance without heavy regularization. Training converges within 100 epochs, demonstrating that basic dense layers can learn patterns in the distributed high-dimensional data better than linear regression. The R2 score of 0.39 certainly beats the baseline model but is still below the target score of 0.5.
+    **Findings**
+    The standard shallow DNN (256 hidden neurons → 1 output) trains quickly on the normalized 21 inputs with ReLU activation and MSE loss. This lightweight architecture provides a baseline for neural network performance without heavy regularization. Training converges within 100 epochs, demonstrating that basic dense layers can learn patterns in the distributed high-dimensional data better than linear regression. The R2 score of 0.39 certainly beats the baseline model but is still below the target score of 0.5.
 
-**Visualizations**
-![alt text](<results/figures/ground_truth vs predicted_dnnstd.png>)
-![alt text](<results/figures/loss vs epoch_dnnstd.png>)
-![alt text](results/figures/Model_Evaluation_dnnstd.png)
+    **Visualizations**
+    ![alt text](<results/figures/ground_truth vs predicted_dnnstd.png>)
+    ![alt text](<results/figures/loss vs epoch_dnnstd.png>)
+    ![alt text](results/figures/Model_Evaluation_dnnstd.png)
 
-**Limitations:**
-Shallow architecture with only one hidden layer may underfit complex nonlinear relationships; no batch normalization or dropout leads to potential overfitting on the training set. MSE loss is sensitive to outliers and does not robustly handle the discrete-like output. No learning rate scheduling or early stopping results in suboptimal convergence. 
+    **Limitations:**
+    Shallow architecture with only one hidden layer may underfit complex nonlinear relationships; no batch normalization or dropout leads to potential overfitting on the training set. MSE loss is sensitive to outliers and does not robustly handle the discrete-like output. No learning rate scheduling or early stopping results in suboptimal convergence. 
 
-**Conclusion:**
-The standard DNN serves as a proof-of-concept that neural networks outperform linear models on this dataset, but the shallow architecture and lack of regularization limits its effectiveness. The learning curve (loss vs epoch) suggests that the model learned everything it could about the data way before the 100th epoch. 
+    **Conclusion:**
+    The standard DNN serves as a proof-of-concept that neural networks outperform linear models on this dataset, but the shallow architecture and lack of regularization limits its effectiveness. The learning curve (loss vs epoch) suggests that the model learned everything it could about the data way before the 100th epoch. 
 
 
 - DNN optimized:
 
-**Findings**
-The optimized Deep Neural Network (DNN) utilized a significantly deeper architecture (512 → 256 → 128 → 64 → 64 → 1) and robust training techniques. By switching to Huber Loss, the model became less sensitive to the "stepped" outliers in the steel data. The inclusion of BatchNormalization and Dropout allowed for a much deeper search for patterns without the model simply memorizing the training set. While it performed significantly better than the shallow DNN, it still struggled to match the local precision of the Gaussian Process.
+    **Findings**
+    The optimized Deep Neural Network (DNN) utilized a significantly deeper architecture (512 → 256 → 128 → 64 → 64 → 1) and robust training techniques. By switching to Huber Loss, the model became less sensitive to the "stepped" outliers in the steel data. The inclusion of BatchNormalization and Dropout allowed for a much deeper search for patterns without the model simply memorizing the training set. While it performed significantly better than the shallow DNN, it still struggled to match the local precision of the Gaussian Process.
 
-**Visualizations**
-![alt text](<results/figures/ground_truth vs predicted_dnnopt.png>)
-![alt text](<results/figures/loss vs epoch_dnnopt.png>)
-![alt text](results/figures/Model_Evaluation_dnnopt.png)
+    **Visualizations**
+    ![alt text](<results/figures/ground_truth vs predicted_dnnopt.png>)
+    ![alt text](<results/figures/loss vs epoch_dnnopt.png>)
+    ![alt text](results/figures/Model_Evaluation_dnnopt.png)
 
-**Limitations**
-Deep models are data-hungry; despite 7,600+ rows, the high dimensionality (21 features) and the distributed variance (as seen in PCA) mean that even an optimized MLP can struggle to find the global optimum. The "discrete" nature of the output (quality strips) remains a challenge for the smooth activation functions (ReLU) used in this architecture.
+    **Limitations**
+    Deep models are data-hungry; despite 7,600+ rows, the high dimensionality (21 features) and the distributed variance (as seen in PCA) mean that even an optimized MLP can struggle to find the global optimum. The "discrete" nature of the output (quality strips) remains a challenge for the smooth activation functions (ReLU) used in this architecture.
 
-**Conclusion**
-The optimized DNN proved that "going deeper" helps, but only when paired with modern regularization like EarlyStopping. It achieved a "respectable" R2 (≈0.43), proving that the steel production data requires hierarchical feature extraction to beat the linear baseline in a significant way.
+    **Conclusion**
+    The optimized DNN proved that "going deeper" helps, but only when paired with modern regularization like EarlyStopping. It achieved a "respectable" R2 (≈0.43), proving that the steel production data requires hierarchical feature extraction to beat the linear baseline in a significant way.
 
 
 
@@ -276,7 +287,7 @@ The primary objective of this project was to develop a predictive model for stee
 
     The Power of Custom Kernels: The success of the GP model (reaching the 0.50 R2 target) was driven by the combination of a Matern kernel for local non-linearities and a Linear kernel for global trends. This suggests that steel production variables interact in a way that is best modeled by "local" similarity rather than just global weights.
 
-    Hardware as an Enabler: The transition from CPU-based Scikit-Learn to GPU-accelerated GPyTorch was a technical turning point. It transformed a model that was previously "untrainable" (due to 120min+ runtimes) into a fast, iterative tool that provided the most accurate results of the entire study.
+    Hardware as an Enabler: The transition from CPU-based Scikit-Learn to GPU-accelerated GPyTorch was proved to be a turning point. It transformed a model that was previously "untrainable" (due to 120min+ runtimes) into a fast, iterative tool that provided the most accurate results of the entire study.
 
 Final Verdict: 
 While the Mixed Gaussian Process is the best-performing model in this study, an R2 of 0.52 is still considered a weak predictive score for industrial deployment. This means the model only explains ≈52% of the variation in steel quality, leaving the other 48% to "mystery" factors or noise.
