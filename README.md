@@ -182,40 +182,38 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
 - Linear Regression:
 
     **Findings**
-
-The baseline linear regression fits on the normalized 21 inputs without strong feature compression. Given PCA showed variance is spread across many components, a linear model most likely captures only a portion of the signal. The linear regression is used as a sanity-check baseline only.
+    The baseline linear regression fits on the normalized 21 inputs without strong feature compression. Given PCA showed variance is spread across many components, a linear model most likely captures only a portion of the signal. The linear regression is used as a sanity-check baseline only.
 
     **Visualizations**
-
-![alt text](<results/figures/ground_truth vs predicted_lr.png>)
-![alt text](results/figures/Model_Evaluation_lr.png)
+    ![alt text](<results/figures/ground_truth vs predicted_lr.png>)
+    ![alt text](results/figures/Model_Evaluation_lr.png)
 
     **Limitations**
-Linear assumes additive, globally linear relationships and no complex interactions; with variance distributed across many components, multiple columns can dilute coefficients and reduce R2 stability.The model therefore underfits any nonlinear effects.
+    Linear assumes additive, globally linear relationships and no complex interactions; with variance distributed across many components, multiple columns can dilute coefficients and reduce R2 stability.The model therefore underfits any nonlinear effects.
 
     **Conclusion**
 
-Linear regression serves as a baseline sanity check but inherently underfits the distributed information revealed by PCA. The model fails to capture nonlinear interactions and the complexity hidden across 14+ principal components. To strengthen the baseline, regularization (Ridge/Lasso) could be added. Richer architectures (RF, GP, optimized DNN) are better positioned to exploit the high-dimensional signal in the steel production data.
+    Linear regression serves as a baseline sanity check but inherently underfits the distributed information revealed by PCA. The model fails to capture nonlinear interactions and the complexity hidden across 14+ principal components. To strengthen the baseline, regularization (Ridge/Lasso) could be added. Richer architectures (RF, GP, optimized DNN) are better positioned to exploit the high-dimensional signal in the steel production data.
 
 
 - Random Forest Regressor:
 
     **Findings**
 
-The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and shows improved R² and lower RMSE compared to linear regression.
+    The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and shows improved R² and lower RMSE compared to linear regression.
 
     **Visualizations**
 
-![alt text](<results/figures/ground_truth vs predicted_rfreg.png>)
-![alt text](results/figures/Model_Evaluation_rfreg.png)
+    ![alt text](<results/figures/ground_truth vs predicted_rfreg.png>)
+    ![alt text](results/figures/Model_Evaluation_rfreg.png)
 
-    **Limitations:**
+    **Limitations**
 
-Default hyperparameters may not be optimal. Without tuning (max_depth, n_estimators, min_samples_leaf) the model risks overfitting on training data as shown in ground_truth vs predicted. 
+    Default hyperparameters may not be optimal. Without tuning (max_depth, n_estimators, min_samples_leaf) the model risks overfitting on training data as shown in ground_truth vs predicted. 
 
-    **Conclusion:**
+    **Conclusion**
 
-Random Forest outperforms linear regression on this dataset due to its ability to model nonlinear interactions and capture complex patterns across 21 features. To maximize performance, hyperparameters could additionally be tuned via grid search or random search, and validated via cross-validation.
+    Random Forest outperforms linear regression on this dataset due to its ability to model nonlinear interactions and capture complex patterns across 21 features. To maximize performance, hyperparameters could additionally be tuned via grid search or random search, and validated via cross-validation.
 
 - Mixed Gaussian Proces (Gpytorch GPU):
 
@@ -230,12 +228,12 @@ Random Forest outperforms linear regression on this dataset due to its ability t
     ![alt text](results/figures/Model_Evaluation_gt.png)
 
 
-    **Limitations:**
+    **Limitations**
     Using the normal scikitlearn Gaussian Process (running on CPU) runtime exceeded 120mins and was therefore terminated. Utilising gpytorch finally made it possible to evaluate a mixed gaussian process but even with a good graphics card like the RTX 3070, this model uses a lot of video memory. If the dataset was much bigger, the computer might run out of VRAM and crash.
 
     Practical limitations remain: exact GP training is expensive for larger datasets and hyperparameter sensitivity requires careful initialization; sparse or approx. GP approaches are recommended when scaling is needed.
 
-    **Conclusion:**
+    **Conclusion**
     Switching to GPyTorch was the turning point for this project. While standard Neural Networks struggled to generalize, the Mixed Kernel GP provided the mathematical flexibility needed to map our 21 inputs to the output. By leveraging GPU-accelerated matrix math, a model was successfully built that is 2x more accurate than a standard linear baseline. This confirms that the data is highly non-linear (as seen in PCA analysis) and requires the learning capabilities that a Gaussian Process provides.
 
 
@@ -249,10 +247,10 @@ Random Forest outperforms linear regression on this dataset due to its ability t
     ![alt text](<results/figures/loss vs epoch_dnnstd.png>)
     ![alt text](results/figures/Model_Evaluation_dnnstd.png)
 
-    **Limitations:**
+    **Limitations**
     Shallow architecture with only one hidden layer may underfit complex nonlinear relationships; no batch normalization or dropout leads to potential overfitting on the training set. MSE loss is sensitive to outliers and does not robustly handle the discrete-like output. No learning rate scheduling or early stopping results in suboptimal convergence. 
 
-    **Conclusion:**
+    **Conclusion**
     The standard DNN serves as a proof-of-concept that neural networks outperform linear models on this dataset, but the shallow architecture and lack of regularization limits its effectiveness. The learning curve (loss vs epoch) suggests that the model learned everything it could about the data way before the 100th epoch. 
 
 
