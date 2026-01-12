@@ -63,8 +63,7 @@ The data analysis pipeline consisted of multiple stages:
 **1. Exploratory Data Analysis (EDA)**
 
 - Missing value analysis: identified and quantified null values across all columns, visualized null fraction distributions
-![Missing Value Analysis](results/figures/MissingValues_Columns.png)
-
+![alt text](results/tables/MissingValues_Columns.png)
 - Duplicate detection: identified and analyzed duplicate rows to assess data quality
 ![Duplicates in Rows](results/tables/n_Duplicates.png)
 Summary: No Duplicates have been found before replacing NaN's with the arithmetic mean of columns
@@ -78,24 +77,25 @@ Summary: No Duplicates have been found before replacing NaN's with the arithmeti
 
 
 PCA Results:
---> Insert
+![alt text](results/figures/PCA_analysis_2D.png)
 It is significant that using principal component analysis (features broken down to 2 components), that the first two components only explain approx. 28% of the variance. Usually in simple datasets the (In udemy.com ML/DL online courses) the first two components  often capture 50-80% of the variance. 
 This menas that the 21 features are relativelyx independent or have complex, non-linear relationships. There is no subset of 2-3 features that "dominate" and tell the whole story so to speak.
 This already suggests that - since PCA is a linear transformation - that linear models and shallow NN's will inherently struggle to find the connection. The data is high-dimensional in nature, therefore the model needs to look at many features simultaneuosly to accurately predict. With only 28% variance in the first two components, a significant portion of the remaining 72% could either be high-frequency signal or random noise.
 
 This begs the question of how many features are actually needed to explain a high portion of the variance.
-
---> Insert 
+![alt text](<results/figures/PCA_analysis_cumulated sum.png>)
 
 The cumulated variance plot reveals a critical truth about the dataset: Information is highly distributed
 To reach 90% variance in the model 14 components are needed. With 16 components 95% is reached.
 
-If the data was linear (and redundant) 3-4 components would already capture 90% of the variance. (Seen on online courses)
+If the data was linear (and redundant) 3-4 components would already capture 90% of the variance. (Seen on udemy courses)
 
 
 
 **2. Data Preprocessing**
 - Missing value imputation: No NaN Values have been found, regardless of n_fractions==0 NaN's are replaced with the mean in each column (for future use)
+
+![alt text](results/figures/output_hist_totalnumbers.png)
 
 -Due to the nature of test and train_data (as seen in histogramm) the data of both sets have been concentuated to one dataset to properly model across the range [0-1]
 
@@ -254,9 +254,7 @@ The optimized DNN proved that "going deeper" helps, but only when paired with mo
 ## Conclusion
 The primary objective of this project was to develop a predictive model for steel production quality capable of achieving an R2 score of at least 0.5. Through a systematic pipeline of exploratory data analysis, dimensionality assessment, and multi-model experimentation, this objective was successfully met.
 
-Key Takeaways:
-
-    The Nature of the Data: PCA revealed that the dataset is highly complex and non-redundant, with 14+ components required to explain 90% of the variance. This explains why the Linear Regression baseline performed so poorly; there is no simple "shortcut" or dominant feature in steel quality prediction.
+    The Nature of the Data: PCA revealed that the dataset is highly complex and non-redundant, with 12+ components required to explain 90% of the variance. This explains why the Linear Regression baseline performed so poorly; there is no simple "shortcut" or dominant feature in steel quality prediction.
 
     Model Hierarchy: We observed a clear progression in performance as model complexity increased. Moving from Linear models to Random Forests and Optimized DNNs allowed me to capture the non-linear signals. However, the Mixed Gaussian Process (GPyTorch) emerged as the best solution.
 
@@ -265,9 +263,9 @@ Key Takeaways:
     Hardware as an Enabler: The transition from CPU-based Scikit-Learn to GPU-accelerated GPyTorch was a technical turning point. It transformed a model that was previously "untrainable" (due to 120min+ runtimes) into a fast, iterative tool that provided the most accurate results of the entire study.
 
 Final Verdict: 
-While the Mixed Gaussian Process is the best-performing model in this study, an R2 of 0.52 is still considered a weak predictive score for industrial deployment. This means the model only explains ≈50% of the variation in steel quality, leaving the other 50% to "mystery" factors or noise.
+While the Mixed Gaussian Process is the best-performing model in this study, an R2 of 0.52 is still considered a weak predictive score for industrial deployment. This means the model only explains ≈52% of the variation in steel quality, leaving the other 48% to "mystery" factors or noise.
 
-There is significant room for improvement. The "discrete" strips in the output data suggest that the current sensor features may be missing key information, or that the Min-Max scaling process has introduced artifacts that hinder regression. Future work should focus on more advanced feature engineering or "Deep Kernel Learning" rather than just adding more layers to a Neural Network.
+There is significant room for improvement. The "discrete" strips in the output data suggest that the current sensor features may be missing key information, or that the scaling process has introduced artifacts that hinder regression. Future work should focus on more advanced feature engineering or "Deep Kernel Learning" rather than just adding more layers to a Neural Network.
 
 
 ## License
