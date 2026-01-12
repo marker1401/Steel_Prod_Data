@@ -106,14 +106,15 @@ If the data was linear (and redundant) 3-4 components would already capture 90% 
 
 ![alt text](results/figures/output_hist_totalnumbers.png)
 
--Due to the nature of test and train_data (as seen in histogramm) the data of both sets have been concentuated to one dataset to properly model across the range [0-1]
+Due to the nature of test and train_data (as seen in histogramm) the data of both sets have been concentuated to one dataset to properly model across the range [0-1]
 
 - Train-test split: As stated above a randomized train_test_split has been implemented on the whole dataset
 
-- Feature scaling: applied StandardScaler (fit on training data only) to normalize input features for neural network training -> This step is redundant as the given data is already normalized with a min-max transformation as stated in the .ipnyb notebook in template.
-
+- Feature scaling: applied StandardScaler (fit on training data only) to normalize input features for neural network training 
+    This step is redundant as the given data is already normalized with a min-max transformation as stated in the .ipnyb notebook in the given template. 
 ![alt text](results/figures/Min-Max_scaling.png)
 
+Nevertheless some models have been fitted using the StandardScaler regardless of the Min-Max normalization
 
 **3. Tools used**
 
@@ -171,9 +172,14 @@ Libraries used:
 All models (due to their continous/discrete nature) were evaluated using the R2-Score and RMSE as standard measurments.
 In the first few iterations it was worngly assumed that the given data is of categorical nature due to output column having 132 unique values on the training set. Thus the first few iterations of code utilising classifiers such as  Logistic Regression, KNN, RFClassifier which were written in an anaconda enviroment yielded very bad scores. These weren't implemented in github because of these aforementioned underwhelming results (R2-scores <0,1%).
 
+
 After talks with Mr. Feith at CPS it was concluded that these data_entries were indeed of continous nature but due to scaling and/or accuarcy of the raw data appear discrete.
 
-- Linear Regression: 
+The x-axis used in the scatter plots relates to 'input21' simply because the pairplot showed the widest scatter of the output vs input21.
+
+
+- Linear Regression:
+
 **Findings**
 The baseline linear regression fits on the normalized 21 inputs without strong feature compression. Given PCA showed variance is spread across many components, a linear model most likely captures only a portion of the signal. The linear regression is used as a sanity-check baseline only.
 
@@ -189,6 +195,7 @@ Linear regression serves as a baseline sanity check but inherently underfits the
 
 
 - Random Forest Regressor:
+
 **Findings**
 The Random Forest (trained with default hyperparameters) captures nonlinear feature interactions and complex patterns better than the linear baseline, leveraging ensemble averaging across multiple decision trees. The model naturally handles the high-dimensional, distributed information revealed by PCA and shows improved R² and lower RMSE compared to linear regression.
 
@@ -203,6 +210,7 @@ Default hyperparameters may not be optimal. Without tuning (max_depth, n_estimat
 Random Forest outperforms linear regression on this dataset due to its ability to model nonlinear interactions and capture complex patterns across 21 features. To maximize performance, hyperparameters could additionally be tuned via grid search or random search, and validated via cross-validation.
 
 - Mixed Gaussian Proces (Gpytorch GPU):
+
 **Findings**
 
 Using a composite kernel the model was able to simultaneously capture smooth non-linear wiggles (Matern) and overall global trends (Linear). It produced the best R²-scores of all models deployed. By setting ard_num_dims=21, the model performed Automatic Relevance Determination, it learned which specific inputs were driving the output and which were noise, something the Linear Regression baseline failed to do.
@@ -221,6 +229,7 @@ Switching to GPyTorch was the turning point for this project. While standard Neu
 
 
 - DNN standard:
+
 **Findings**
 The standard shallow DNN (256 hidden neurons → 1 output) trains quickly on the normalized 21 inputs with ReLU activation and MSE loss. This lightweight architecture provides a baseline for neural network performance without heavy regularization. Training converges within 100 epochs, demonstrating that basic dense layers can learn patterns in the distributed high-dimensional data better than linear regression. The R2 score of 0.39 certainly beats the baseline model but is still below the target score of 0.5.
 
@@ -237,6 +246,7 @@ The standard DNN serves as a proof-of-concept that neural networks outperform li
 
 
 - DNN optimized:
+
 **Findings**
 The optimized Deep Neural Network (DNN) utilized a significantly deeper architecture (512 → 256 → 128 → 64 → 64 → 1) and robust training techniques. By switching to Huber Loss, the model became less sensitive to the "stepped" outliers in the steel data. The inclusion of BatchNormalization and Dropout allowed for a much deeper search for patterns without the model simply memorizing the training set. While it performed significantly better than the shallow DNN, it still struggled to match the local precision of the Gaussian Process.
 
@@ -249,7 +259,7 @@ The optimized Deep Neural Network (DNN) utilized a significantly deeper architec
 Deep models are data-hungry; despite 7,600+ rows, the high dimensionality (21 features) and the distributed variance (as seen in PCA) mean that even an optimized MLP can struggle to find the global optimum. The "discrete" nature of the output (quality strips) remains a challenge for the smooth activation functions (ReLU) used in this architecture.
 
 **Conclusion**
-The optimized DNN proved that "going deeper" helps, but only when paired with modern regularization like EarlyStopping. It achieved a "respectable" R2 (≈0.43), proving that the steel production data requires complex, hierarchical feature extraction to beat a linear baseline.
+The optimized DNN proved that "going deeper" helps, but only when paired with modern regularization like EarlyStopping. It achieved a "respectable" R2 (≈0.43), proving that the steel production data requires hierarchical feature extraction to beat the linear baseline in a significant way.
 
 
 
