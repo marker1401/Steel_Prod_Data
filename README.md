@@ -308,21 +308,23 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
 
 
 
-## Conclusion
+## Project Conclusion
+
 The primary objective of this project was to develop a predictive model for steel production quality capable of achieving an R2 score of at least 0.5. Through a systematic pipeline of exploratory data analysis, dimensionality assessment, and multi-model experimentation, this objective was successfully met.
 
-    The Nature of the Data: PCA revealed that the dataset is highly complex and non-redundant, with 12+ components required to explain 90% of the variance. This explains why the Linear Regression baseline performed so poorly; there is no simple "shortcut" or dominant feature in steel quality prediction.
+Data Nature: PCA revealed that the dataset is highly complex and non-redundant, with 12+ components required to explain 90% of the variance. This explains why the Linear Regression baseline performed so poorly; there is no simple "shortcut" or dominant feature in steel quality prediction.
 
-    Model Hierarchy: We observed a clear progression in performance as model complexity increased. Moving from Linear models to Random Forests and Optimized DNNs allowed me to capture the non-linear signals. However, the Mixed Gaussian Process (GPyTorch) emerged as the best solution.
+Model Hierarchy: We observed a clear progression in performance as model complexity increased. Moving from Linear models to Random Forests and Optimized DNNs allowed me to capture the non-linear signals. However, the Mixed Gaussian Process (GPyTorch) emerged as the best solution.
 
-    The Power of Custom Kernels: The success of the GP model (reaching the 0.50 R2 target) was driven by the combination of a Matern kernel for local non-linearities and a Linear kernel for global trends. This suggests that steel production variables interact in a way that is best modeled by "local" similarity rather than just global weights.
+Custom Kernels: The success of the GP model (reaching the 0.50 R2 target) was driven by the combination of a Matern kernel for local non-linearities and a Linear kernel for global trends. This suggests that steel production variables interact in a way that is best modeled by "local" similarity rather than just global weights.
 
-    Hardware as an Enabler: The transition from CPU-based Scikit-Learn to GPU-accelerated GPyTorch was proved to be a turning point. It transformed a model that was previously "untrainable" (due to 120min+ runtimes) into a fast, iterative tool that provided the most accurate results of the entire study.
+GPU Acceleration: The transition from CPU-based Scikit-Learn to GPU-accelerated GPyTorch was proved to be a turning point. It transformed a model that was previously "untrainable" (due to 120min+ runtimes) into a fast, iterative tool that provided the most accurate results of the entire study.
 
 Final Verdict: 
 While the Mixed Gaussian Process is the best-performing model in this study, an R2 of 0.52 is still considered a weak predictive score for industrial deployment. This means the model only explains ≈52% of the variation in steel quality, leaving the other 48% to "mystery" factors or noise.
 
 There is significant room for improvement. The "discrete" strips in the output data suggest that the current sensor features may be missing key information, or that the scaling process has introduced artifacts that hinder regression. Future work should focus on more advanced feature engineering or "Deep Kernel Learning" rather than just adding more layers to a Neural Network.
+    
 
 
 ## License
