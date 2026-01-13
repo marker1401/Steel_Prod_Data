@@ -120,37 +120,57 @@ Nevertheless some models have been fitted using the StandardScaler regardless of
 
 Libraries used:
 - Python + NumPy/Pandas: Data loading, manipulation, and numerical arrays. 
+
     Used for basically everything, makes data manipulations and handling of arrays easier
 
 - Matplotlib + Seaborn: Exploratory plotting (histograms, pairplots, heatmaps, scatter).
+
     Matplotlib was widely used for most visulizations and data exploration.
     Seaborn was exclusively used for the ability to generate a pairplot without hassle
 
 - scikit-learn: Train/test split, PCA, Linear Regression, RandomForestRegressor, GaussianProcessRegressor (with RBF, Matern, Constant/    White kernels).
+
     Used for all machine learning models and for the principal component analysis to explain the captured variance 
 
 - TensorFlow/Keras: Sequential dense neural nets for baseline and optimized models (Dense layers, BatchNormalization, Dropout), with Huber/MSE losses, Adam optimizer.
+
     Used for the shallow neural network nnstd (neural network standard) and the "optimized" deep neural network nnopt (neural network optimized) 
 
 - Keras callbacks: ReduceLROnPlateau and EarlyStopping for training control.
-    xclusively used for the deep neural network nnopt to reduce learning rate on plateu and early stopping to restore best weights throughout the epochs 
+
+    Exclusively used for the deep neural network nnopt to reduce learning rate on plateu and early stopping to restore best weights throughout the epochs 
 
 - Custom helper (plot_helper): Evaluation metrics table, prediction scatter, and loss plotting.
+
     Used to visualize the model evaluations. Contains 3 defs to make the notebook file sleeker
 
 *Baseline Regression Model:*
 - Linear Regression: established baseline performance using ordinary least squares
 
+    This model was implemented as a baseline "sanity check" to establish a performance floor for the project. Given that the PCA showed variance spread across 14+ components, this model struggled significantly, achieving a low R2
+
 *Regression Models:*
 - Random Forest Regressor: Evaluated based on R2-score using default hyperparameters
 
+    The Random Forest is an ensemble model that builds a "forest" of many individual decision trees to make a collective prediction. It is much more flexible than linear regression because it can capture non-linear patterns by "branching" through different combinations of sensor data. This model is particularly useful for this dataset because it handles high-dimensional inputs well and is naturally resistant to outliers that might be present in raw production data.
+
 - Gaussian Process: Terminated after 120mins due to it running on CPU
 
+    This model is a probabilistic approach that predicts output by calculating the similarity between data points in a high-dimensional space. Unlike standard models that only give a single number, a Gaussian Process provides a range of certainty for every prediction.
+
 - Mixed Gaussian Process (GPyTorch): combines Matern/Linear/Scale kernels.
+
+    PCA indicated that 14+ components were required to reach 90% variance, suggesting a highly non-linear and "rugged" data landscape. 
+    The matern kernel is less "smooth" than an RBF and handels the non-linear transitions and "jagged" patterns better than RBF. By setting ard_num_dims=21, the model assigns a unique "importance weight"  to every input. This allows the GPU to automatically identify which sensors are critical and which are merely providing noise.
+    Adding a Linear Kernel provides a global "trend line." This prevents the model from getting too lost in local "wiggles" and ensures it maintains a baseline understanding of the overall process direction.
+    The ConstantMean allows the model to learn the global average offset of the output layer.
+    This ensures that the predictions are centered correctly on the target range [0, 1] before the kernels begin modeling the variations.
 
     Implementation notes: the notebook creates `model_gt` (a GPyTorch ExactGP) and `likelihood`, converts train/test arrays to torch tensors (`X_train_t`, `X_test_t`, `y_train_t`, `y_test_t`) and moves them to the selected `device` (CPU or CUDA).
     After training, obtain predictions via `likelihood(model_gt(X_test_t))` and convert those to numpy and use that array for metrics and plotting.
     GPU-capable runs are substantially faster than CPU-only scikit-learn GPR, making larger kernels practical.
+
+
 
 
 *Deep Learning Models:*
@@ -182,6 +202,7 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
 - Linear Regression:
 
     **Findings**
+
     The baseline linear regression fits on the normalized 21 inputs without strong feature compression. Given PCA showed variance is spread across many components, a linear model most likely captures only a portion of the signal. The linear regression is used as a sanity-check baseline only.
 
     **Visualizations**
@@ -189,6 +210,7 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
     ![alt text](results/figures/Model_Evaluation_lr.png)
 
     **Limitations**
+
     Linear assumes additive, globally linear relationships and no complex interactions; with variance distributed across many components, multiple columns can dilute coefficients and reduce R2 stability.The model therefore underfits any nonlinear effects.
 
     **Conclusion**
@@ -229,45 +251,55 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
 
 
     **Limitations**
+
     Using the normal scikitlearn Gaussian Process (running on CPU) runtime exceeded 120mins and was therefore terminated. Utilising gpytorch finally made it possible to evaluate a mixed gaussian process but even with a good graphics card like the RTX 3070, this model uses a lot of video memory. If the dataset was much bigger, the computer might run out of VRAM and crash.
 
     Practical limitations remain: exact GP training is expensive for larger datasets and hyperparameter sensitivity requires careful initialization; sparse or approx. GP approaches are recommended when scaling is needed.
 
     **Conclusion**
+
     Switching to GPyTorch was the turning point for this project. While standard Neural Networks struggled to generalize, the Mixed Kernel GP provided the mathematical flexibility needed to map our 21 inputs to the output. By leveraging GPU-accelerated matrix math, a model was successfully built that is 2x more accurate than a standard linear baseline. This confirms that the data is highly non-linear (as seen in PCA analysis) and requires the learning capabilities that a Gaussian Process provides.
 
 
 - DNN standard:
 
     **Findings**
+
     The standard shallow DNN (256 hidden neurons → 1 output) trains quickly on the normalized 21 inputs with ReLU activation and MSE loss. This lightweight architecture provides a baseline for neural network performance without heavy regularization. Training converges within 100 epochs, demonstrating that basic dense layers can learn patterns in the distributed high-dimensional data better than linear regression. The R2 score of 0.39 certainly beats the baseline model but is still below the target score of 0.5.
 
     **Visualizations**
+
     ![alt text](<results/figures/ground_truth vs predicted_dnnstd.png>)
     ![alt text](<results/figures/loss vs epoch_dnnstd.png>)
     ![alt text](results/figures/Model_Evaluation_dnnstd.png)
 
     **Limitations**
+
     Shallow architecture with only one hidden layer may underfit complex nonlinear relationships; no batch normalization or dropout leads to potential overfitting on the training set. MSE loss is sensitive to outliers and does not robustly handle the discrete-like output. No learning rate scheduling or early stopping results in suboptimal convergence. 
 
     **Conclusion**
+
     The standard DNN serves as a proof-of-concept that neural networks outperform linear models on this dataset, but the shallow architecture and lack of regularization limits its effectiveness. The learning curve (loss vs epoch) suggests that the model learned everything it could about the data way before the 100th epoch. 
 
 
 - DNN optimized:
 
     **Findings**
+
     The optimized Deep Neural Network (DNN) utilized a significantly deeper architecture (512 → 256 → 128 → 64 → 64 → 1) and robust training techniques. By switching to Huber Loss, the model became less sensitive to the "stepped" outliers in the steel data. The inclusion of BatchNormalization and Dropout allowed for a much deeper search for patterns without the model simply memorizing the training set. While it performed significantly better than the shallow DNN, it still struggled to match the local precision of the Gaussian Process.
 
     **Visualizations**
+
     ![alt text](<results/figures/ground_truth vs predicted_dnnopt.png>)
     ![alt text](<results/figures/loss vs epoch_dnnopt.png>)
     ![alt text](results/figures/Model_Evaluation_dnnopt.png)
 
     **Limitations**
+
     Deep models are data-hungry; despite 7,600+ rows, the high dimensionality (21 features) and the distributed variance (as seen in PCA) mean that even an optimized MLP can struggle to find the global optimum. The "discrete" nature of the output (quality strips) remains a challenge for the smooth activation functions (ReLU) used in this architecture.
 
     **Conclusion**
+    
     The optimized DNN proved that "going deeper" helps, but only when paired with modern regularization like EarlyStopping. It achieved a "respectable" R2 (≈0.43), proving that the steel production data requires hierarchical feature extraction to beat the linear baseline in a significant way.
 
 

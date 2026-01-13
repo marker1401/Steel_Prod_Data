@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
 
 
-
-def plot_loss(history):
+# Plot training loss over epochs
+def plot_loss(history): #history: Keras History object
     plt.figure(figsize=(20,5))
-    plt.plot(history.history['loss'], 'g', label='Training Loss')
-   # plt.plot(history.history['val_loss'], 'b', label='Validation Loss')
+    plt.plot(history.history['loss'], 'g', label='Training Loss') 
     plt.xlim(0,200)
     plt.ylim(bottom=0)
     plt.xlabel('Epoch')
@@ -14,11 +13,11 @@ def plot_loss(history):
     plt.grid(True)
 
 
-
-def plot_data(X_data, y_data, y, title=None):
+# Plot model predictions vs ground truth
+def plot_data(X_data, y_data, y, title=None): #X_data: input features, y_data: ground truth, y: model predictions
      
     plt.figure(figsize=(15,5))
-    plt.scatter(X_data[:,20], y_data, label='ground truth', alpha=0.4)
+    plt.scatter(X_data[:,20], y_data, label='ground truth', alpha=0.4) #Use Input21 for x-axis
     plt.scatter(X_data[:,20], y, label='Model Predictions',alpha=0.4)
     plt.xlabel('Input21')
     plt.ylabel('Output')
@@ -26,8 +25,8 @@ def plot_data(X_data, y_data, y, title=None):
     plt.grid(True)
     plt.legend()
 
-
-def evaluate_model(model, X_test, y_test):
+# Evaluate model performance and print metrics
+def evaluate_model(model, X_test, y_test): 
    
     import numpy as np
     from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
