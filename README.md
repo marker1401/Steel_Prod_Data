@@ -307,7 +307,9 @@ The x-axis used in the scatter plots relates to 'input21' simply because the pai
 ![Results of all Modles](results/figures/Scores.png)
 
 
+
 ## Project Conclusion
+
 The primary objective of this project was to develop a predictive model for steel production quality capable of achieving an R2 score of at least 0.5. Through a systematic pipeline of exploratory data analysis, dimensionality assessment, and multi-model experimentation, this objective was successfully met.
 
 Data Nature: PCA revealed that the dataset is highly complex and non-redundant, with 12+ components required to explain 90% of the variance. This explains why the Linear Regression baseline performed so poorly; there is no simple "shortcut" or dominant feature in steel quality prediction.
